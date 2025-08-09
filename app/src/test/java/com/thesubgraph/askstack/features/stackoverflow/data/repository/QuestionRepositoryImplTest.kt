@@ -3,10 +3,13 @@ package com.thesubgraph.askstack.features.stackoverflow.data.repository
 import com.thesubgraph.askstack.base.utils.network.NetworkError
 import com.thesubgraph.askstack.base.utils.network.RequestWrapper
 import com.thesubgraph.askstack.base.utils.network.ValueResult
+import com.thesubgraph.askstack.base.utils.network.WebServiceError
 import com.thesubgraph.askstack.base.utils.network.toErrorDomain
+import com.thesubgraph.askstack.features.stackoverflow.TestFixtures
 import com.thesubgraph.askstack.features.stackoverflow.data.remote.ApiService
 import com.thesubgraph.askstack.features.stackoverflow.domain.model.Question
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -14,8 +17,10 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import kotlinx.coroutines.test.runTest
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.times
+import kotlinx.coroutines.test.runTest
+import org.mockito.kotlin.verifyBlocking
 import retrofit2.Response
 
 class QuestionRepositoryImplTest {
@@ -34,51 +39,18 @@ class QuestionRepositoryImplTest {
     @Test
     fun `search returns success result when api call succeeds`() = runTest {
         val query = "android kotlin"
-        val expectedQuestions = listOf(
-            Question(
-                id = 1,
-                title = "Test Question",
-                body = "This is a test question body.",
-                creationDate = kotlinx.datetime.LocalDateTime(2023, 1, 1, 12, 0),
-                lastActivityDate = kotlinx.datetime.LocalDateTime(2023, 1, 1, 12, 0),
-                lastEditDate = kotlinx.datetime.LocalDateTime(2023, 1, 1, 12, 0),
-                score = 10,
-                answerCount = 2,
-                viewCount = 100,
-                link = "https://stackoverflow.com/questions/1",
-                isAnswered = true,
-                tags = listOf("android", "kotlin")
-            ),
-            Question(
-                id = 2,
-                title = "Another Question",
-                body = "Another test question body.",
-                creationDate = kotlinx.datetime.LocalDateTime(2023, 1, 2, 12, 0),
-                lastActivityDate = kotlinx.datetime.LocalDateTime(2023, 1, 2, 12, 0),
-                lastEditDate = kotlinx.datetime.LocalDateTime(2023, 1, 2, 12, 0),
-                score = 5,
-                answerCount = 1,
-                viewCount = 50,
-                link = "https://stackoverflow.com/questions/2",
-                isAnswered = false,
-                tags = listOf("kotlin")
-            )
-        )
-        val successResult = ValueResult.Success(expectedQuestions)
+        val successResult = ValueResult.Success(TestFixtures.mockQuestions)
 
         whenever(
             requestWrapper.execute(
                 mapper = any<Function1<Any, List<Question>?>>(),
-                apiCall = any<suspend () -> retrofit2.Response<Any>>()
+                apiCall = any<suspend () -> Response<Any>>()
             )
         ).thenReturn(successResult)
 
-        // When
         val result = repository.search(query).first()
-
-        // Then
         assertTrue(result is ValueResult.Success)
-        assertEquals(expectedQuestions, (result as ValueResult.Success).data)
+        assertEquals(TestFixtures.mockQuestions, (result as ValueResult.Success).data)
     }
 
     @Test
@@ -88,122 +60,174 @@ class QuestionRepositoryImplTest {
         val errorMessage = "Network error"
         val errorResult = ValueResult.Failure(errorMessage.toErrorDomain(NetworkError.NoInternet))
 
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(errorResult)
+
+        val result = repository.search(query).first()
+        assertTrue(result is ValueResult.Failure)
+        assertEquals(errorMessage, (result as ValueResult.Failure).error.message)
+        verifyBlocking(requestWrapper) {
+            execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        }
+    }
+
+    @Test
+    fun `search returns empty list when api returns empty response`() = runTest {
+        val query = "nonexistent query"
+        val emptyResult = ValueResult.Success(emptyList<Question>())
 
         whenever(
             requestWrapper.execute(
                 mapper = any<Function1<Any, List<Question>?>>(),
-                apiCall = any<suspend () -> retrofit2.Response<Any>>()
+                apiCall = any<suspend () -> Response<Any>>()
             )
-        ).thenReturn(errorResult)
+        ).thenReturn(emptyResult)
 
-        // When
         val result = repository.search(query).first()
-
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        assertEquals(errorMessage, (result as ValueResult.Failure).error.message)
-        verify(requestWrapper).execute(
-            mapper = any<Function1<Any, List<Question>?>>(),
-            apiCall = any<suspend () -> Response<Any>>()
-        )
+        assertTrue(result is ValueResult.Success)
+        assertTrue((result as ValueResult.Success).data.isEmpty())
     }
 
     @Test
-    fun `execute should return server error for 500 response code`() = runTest {
-        // Given
-        val mockResponse = mock<Response<String>>()
-        whenever(mockResponse.code()).thenReturn(500)
-        whenever(mockResponse.body()).thenReturn(null)
+    fun `search handles empty query string`() = runTest {
+        val emptyQuery = ""
+        val successResult = ValueResult.Success(TestFixtures.mockQuestions)
 
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(successResult)
 
-        val result = requestWrapper.execute(mapper = any<Function1<Any, List<Question>?>>(),
-            apiCall = any<suspend () -> Response<Any>>()) { mockResponse }
-
-
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches WebServiceError.ServerError
+        val result = repository.search(emptyQuery).first()
+        assertTrue(result is ValueResult.Success)
+        
+        verifyBlocking(requestWrapper) {
+            execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        }
     }
 
     @Test
-    fun `execute should return authorization error for 403 response code`() = runTest {
-        // Given
-        val mockResponse = mockk<Response<String>>()
-        every { mockResponse.code() } returns 403
+    fun `search handles special characters in query`() = runTest {
+        val specialQuery = "android & kotlin @ #test"
+        val successResult = ValueResult.Success(TestFixtures.mockQuestions)
 
-        // When
-        val result = requestWrapper.execute { it } { mockResponse }
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(successResult)
 
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches WebServiceError.Authorization
+        val result = repository.search(specialQuery).first()
+        assertTrue(result is ValueResult.Success)
+        assertEquals(TestFixtures.mockQuestions, (result as ValueResult.Success).data)
     }
 
     @Test
-    fun `execute should return server not found for 404 response code`() = runTest {
-        // Given
-        val mockResponse = mockk<Response<String>>()
-        every { mockResponse.code() } returns 404
+    fun `search returns different error types correctly`() = runTest {
+        val query = "test query"
+        val serverError = ValueResult.Failure("Server Error".toErrorDomain(WebServiceError.ServerError))
 
-        // When
-        val result = requestWrapper.execute { it } { mockResponse }
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(serverError)
 
-        // Then
+        val result = repository.search(query).first()
         assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches NetworkError.ServerNotFound
+        assertEquals(WebServiceError.ServerError, (result as ValueResult.Failure).error.type)
     }
 
     @Test
-    fun `execute should return custom error for 422 response code`() = runTest {
-        // Given
-        val mockResponse = mock<Response<String>>()
-        every { mockResponse.code() } returns 422
+    fun `search flow emits single value per call`() = runTest {
+        val query = "kotlin"
+        val successResult = ValueResult.Success(TestFixtures.mockQuestions)
 
-        // When
-        val result = requestWrapper.execute { it } { mockResponse }
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(successResult)
 
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches WebServiceError.Custom
+        val results = repository.search(query).toList()
+        assertEquals(1, results.size)
+        assertTrue(results.first() is ValueResult.Success)
     }
 
     @Test
-    fun `handleException should return timeout error for SocketTimeoutException`() {
-        // Given
-        val exception = java.net.SocketTimeoutException("Connection timeout")
+    fun `search with long query string works correctly`() = runTest {
+        val longQuery = "a".repeat(1000) // Very long query
+        val successResult = ValueResult.Success(TestFixtures.singleMockQuestion)
 
-        // When
-        val result = requestWrapper.handleException(exception)
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(successResult)
 
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches NetworkError.RequestTimedOut
+        val result = repository.search(longQuery).first()
+        assertTrue(result is ValueResult.Success)
+        assertEquals(TestFixtures.singleMockQuestion, (result as ValueResult.Success).data)
     }
 
     @Test
-    fun `handleException should return no internet error for UnknownHostException`() {
-        // Given
-        val exception = java.net.UnknownHostException("No internet")
+    fun `search handles timeout error correctly`() = runTest {
+        val query = "android"
+        val timeoutError = ValueResult.Failure("Request timed out".toErrorDomain(NetworkError.RequestTimedOut))
 
-        // When
-        val result = requestWrapper.handleException(exception)
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(timeoutError)
 
-        // Then
+        val result = repository.search(query).first()
         assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches NetworkError.NoInternet
+        assertEquals(NetworkError.RequestTimedOut, (result as ValueResult.Failure).error.type)
     }
 
     @Test
-    fun `handleException should return server not found for ConnectException`() {
-        // Given
-        val exception = java.net.ConnectException("Connection refused")
+    fun `multiple calls to search create independent flows`() = runTest {
+        val query1 = "kotlin"
+        val query2 = "android"
+        val result1 = ValueResult.Success(TestFixtures.singleMockQuestion)
+        val result2 = ValueResult.Success(TestFixtures.mockQuestions)
 
-        // When
-        val result = requestWrapper.handleException(exception)
+        whenever(
+            requestWrapper.execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        ).thenReturn(result1).thenReturn(result2)
 
-        // Then
-        assertTrue(result is ValueResult.Failure)
-        // Verify the error type matches NetworkError.ServerNotFound
+        val flow1Result = repository.search(query1).first()
+        val flow2Result = repository.search(query2).first()
+
+        assertTrue(flow1Result is ValueResult.Success)
+        assertTrue(flow2Result is ValueResult.Success)
+        
+        verifyBlocking(requestWrapper, times(2)) {
+            execute(
+                mapper = any<Function1<Any, List<Question>?>>(),
+                apiCall = any<suspend () -> Response<Any>>()
+            )
+        }
     }
-
 }
