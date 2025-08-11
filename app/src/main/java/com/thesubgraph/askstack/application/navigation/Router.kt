@@ -15,6 +15,10 @@ import com.thesubgraph.askstack.base.theme.AskStackTheme
 import com.thesubgraph.askstack.base.utils.noRippleClickable
 import com.thesubgraph.askstack.features.stackoverflow.view.home.HomeScreen
 import com.thesubgraph.askstack.features.stackoverflow.viewmodel.HomeViewModel
+import com.thesubgraph.askstack.features.rag.view.ChatScreen
+import com.thesubgraph.askstack.features.rag.view.SettingsScreen
+import com.thesubgraph.askstack.features.rag.viewmodel.ChatViewModel
+import com.thesubgraph.askstack.features.rag.viewmodel.SettingsViewModel
 
 class Router(val navController: NavHostController) {
     @Composable
@@ -54,6 +58,28 @@ class Router(val navController: NavHostController) {
                     composable<Destination.Home> {
                         val viewModel: HomeViewModel = hiltViewModel()
                         HomeScreen(router = this@Router, viewModel = viewModel)
+                    }
+                    
+                    composable<Destination.ChatScreen> { backStackEntry ->
+                        val args = backStackEntry.arguments
+                        val conversationId = args?.getString("conversationId")
+                        val assistantId = args?.getString("assistantId")
+                        
+                        val viewModel: ChatViewModel = hiltViewModel()
+                        ChatScreen(
+                            conversationId = conversationId,
+                            assistantId = assistantId,
+                            onNavigateBack = { navigateUp() },
+                            viewModel = viewModel
+                        )
+                    }
+                    
+                    composable<Destination.Settings> {
+                        val viewModel: SettingsViewModel = hiltViewModel()
+                        SettingsScreen(
+                            onNavigateBack = { navigateUp() },
+                            viewModel = viewModel
+                        )
                     }
                 }
             }

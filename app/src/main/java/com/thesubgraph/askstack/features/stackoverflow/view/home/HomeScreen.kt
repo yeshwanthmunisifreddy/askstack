@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.thesubgraph.askstack.application.navigation.Router
 import com.thesubgraph.askstack.base.components.EmptySearchResults
 import com.thesubgraph.askstack.base.components.SearchBar
@@ -53,6 +54,7 @@ fun HomeScreen(router: Router, viewModel: HomeViewModel) {
         searchResults = searchResults,
         showBottomSheet = showBottomSheet,
         selectedQuestion = selectedQuestion,
+        router = router,
         intent = { intent ->
             performIntent(
                 intent = intent,
@@ -101,13 +103,14 @@ private fun ScreenContent(
     searchResults: State<List<Question>>,
     showBottomSheet: MutableState<Boolean>,
     selectedQuestion: MutableState<Question?>,
-    intent: (HomeUiIntent) -> Unit
+    intent: (HomeUiIntent) -> Unit,
+    router: Router
 ) {
     val state = rememberLazyListState()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.White,
-        topBar = { TopBar() }) { windowInsets ->
+        topBar = { TopBar(router) }) { windowInsets ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -197,5 +200,6 @@ fun HomeScreenPreview() {
         showBottomSheet = remember { mutableStateOf(false) },
         selectedQuestion = remember { mutableStateOf(null) },
         intent = {},
+        router = Router(rememberNavController())
     )
 }
