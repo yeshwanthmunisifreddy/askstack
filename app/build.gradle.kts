@@ -78,7 +78,7 @@ dependencies {
     /**------------Hilt----------------------------- */
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
-    testImplementation(libs.junit.junit)
+    testImplementation(libs.junit)
     ksp(libs.hilt.android.compiler)
 
     /**------------Retrofit----------------------------- */

@@ -76,7 +76,6 @@ logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-intercep
 # Kotlin Coroutines dependencies
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
-junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
 
 # Chat assistant dependencies
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

@@ -3,7 +3,7 @@ package com.thesubgraph.askstack.application.di
 import android.content.Context
 import com.google.gson.Gson
 import com.thesubgraph.askstack.base.utils.network.RequestWrapper
-import com.thesubgraph.askstack.features.stackoverflow.data.remote.ApiService
+import com.thesubgraph.askstack.features.search.data.remote.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

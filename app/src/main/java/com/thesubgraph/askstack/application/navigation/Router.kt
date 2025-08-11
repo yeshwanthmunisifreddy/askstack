@@ -13,15 +13,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.thesubgraph.askstack.base.theme.AskStackTheme
 import com.thesubgraph.askstack.base.utils.noRippleClickable
-import com.thesubgraph.askstack.features.stackoverflow.view.home.HomeScreen
-import com.thesubgraph.askstack.features.stackoverflow.viewmodel.HomeViewModel
-import com.thesubgraph.askstack.features.rag.view.AssistantManagementScreen
-import com.thesubgraph.askstack.features.rag.view.ChatScreen
-import com.thesubgraph.askstack.features.rag.view.CreateAssistantScreen
-import com.thesubgraph.askstack.features.rag.view.SettingsScreen
-import com.thesubgraph.askstack.features.rag.viewmodel.AssistantViewModel
-import com.thesubgraph.askstack.features.rag.viewmodel.ChatViewModel
-import com.thesubgraph.askstack.features.rag.viewmodel.SettingsViewModel
+import com.thesubgraph.askstack.features.search.view.home.HomeScreen
+import com.thesubgraph.askstack.features.search.viewmodel.HomeViewModel
+import com.thesubgraph.askstack.features.assistant.view.ChatScreen
+import com.thesubgraph.askstack.features.assistant.viewmodel.ChatViewModel
 
 class Router(val navController: NavHostController) {
     @Composable
@@ -67,43 +62,14 @@ class Router(val navController: NavHostController) {
                         val args = backStackEntry.arguments
                         val conversationId = args?.getString("conversationId")
                         val assistantId = args?.getString("assistantId")
+                        val initialMessage = args?.getString("initialMessage")
                         
                         val viewModel: ChatViewModel = hiltViewModel()
                         ChatScreen(
                             conversationId = conversationId,
                             assistantId = assistantId,
-                            onNavigateBack = { navigateUp() },
-                            viewModel = viewModel
-                        )
-                    }
-                    
-                    composable<Destination.Settings> {
-                        val viewModel: SettingsViewModel = hiltViewModel()
-                        SettingsScreen(
-                            onNavigateBack = { navigateUp() },
-                            viewModel = viewModel
-                        )
-                    }
-                    
-                    composable<Destination.AssistantManagement> {
-                        val viewModel: AssistantViewModel = hiltViewModel()
-                        AssistantManagementScreen(
-                            onNavigateBack = { navigateUp() },
-                            onNavigateToCreateAssistant = { 
-                                navigateTo(Destination.CreateAssistant) 
-                            },
-                            onAssistantSelected = { assistantId ->
-                                navigateTo(Destination.ChatScreen(assistantId = assistantId))
-                            },
-                            viewModel = viewModel
-                        )
-                    }
-                    
-                    composable<Destination.CreateAssistant> {
-                        val viewModel: AssistantViewModel = hiltViewModel()
-                        CreateAssistantScreen(
-                            onNavigateBack = { navigateUp() },
-                            onAssistantCreated = { navigateUp() },
+                            initialMessage = initialMessage,
+                            onBackPressed = { navigateUp() },
                             viewModel = viewModel
                         )
                     }
