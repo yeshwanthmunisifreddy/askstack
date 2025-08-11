@@ -15,8 +15,11 @@ import com.thesubgraph.askstack.base.theme.AskStackTheme
 import com.thesubgraph.askstack.base.utils.noRippleClickable
 import com.thesubgraph.askstack.features.stackoverflow.view.home.HomeScreen
 import com.thesubgraph.askstack.features.stackoverflow.viewmodel.HomeViewModel
+import com.thesubgraph.askstack.features.rag.view.AssistantManagementScreen
 import com.thesubgraph.askstack.features.rag.view.ChatScreen
+import com.thesubgraph.askstack.features.rag.view.CreateAssistantScreen
 import com.thesubgraph.askstack.features.rag.view.SettingsScreen
+import com.thesubgraph.askstack.features.rag.viewmodel.AssistantViewModel
 import com.thesubgraph.askstack.features.rag.viewmodel.ChatViewModel
 import com.thesubgraph.askstack.features.rag.viewmodel.SettingsViewModel
 
@@ -78,6 +81,29 @@ class Router(val navController: NavHostController) {
                         val viewModel: SettingsViewModel = hiltViewModel()
                         SettingsScreen(
                             onNavigateBack = { navigateUp() },
+                            viewModel = viewModel
+                        )
+                    }
+                    
+                    composable<Destination.AssistantManagement> {
+                        val viewModel: AssistantViewModel = hiltViewModel()
+                        AssistantManagementScreen(
+                            onNavigateBack = { navigateUp() },
+                            onNavigateToCreateAssistant = { 
+                                navigateTo(Destination.CreateAssistant) 
+                            },
+                            onAssistantSelected = { assistantId ->
+                                navigateTo(Destination.ChatScreen(assistantId = assistantId))
+                            },
+                            viewModel = viewModel
+                        )
+                    }
+                    
+                    composable<Destination.CreateAssistant> {
+                        val viewModel: AssistantViewModel = hiltViewModel()
+                        CreateAssistantScreen(
+                            onNavigateBack = { navigateUp() },
+                            onAssistantCreated = { navigateUp() },
                             viewModel = viewModel
                         )
                     }

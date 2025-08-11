@@ -2,6 +2,7 @@ package com.thesubgraph.askstack.features.rag.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thesubgraph.askstack.BuildConfig
 import com.thesubgraph.askstack.features.rag.data.local.storage.SecurePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -24,8 +25,14 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadCurrentSettings() {
         _uiState.value = _uiState.value.copy(
-            apiKey = securePreferences.getApiKey() ?: "",
-            assistantId = securePreferences.getDefaultAssistantId() ?: ""
+            apiKey = if (BuildConfig.OPENAI_API_KEY.isNotBlank()) "Loaded from BuildConfig" else "",
+            assistantId = if (BuildConfig.OPENAI_ASSISTANT_ID.isNotBlank()) {
+                "Loaded from BuildConfig"
+            } else {
+                securePreferences.getDefaultAssistantId() ?: ""
+            },
+            isApiKeyFromBuildConfig = BuildConfig.OPENAI_API_KEY.isNotBlank(),
+            isAssistantIdFromBuildConfig = BuildConfig.OPENAI_ASSISTANT_ID.isNotBlank()
         )
     }
 
@@ -40,35 +47,68 @@ class SettingsViewModel @Inject constructor(
     fun saveSettings() {
         val currentState = _uiState.value
         
-        if (currentState.apiKey.isBlank()) {
+        // If both API key and Assistant ID are from BuildConfig, nothing to save
+        if (currentState.isApiKeyFromBuildConfig && currentState.isAssistantIdFromBuildConfig) {
             _uiState.value = currentState.copy(
-                message = "API key cannot be empty"
+                message = "All settings are loaded from BuildConfig"
             )
             return
         }
-
-        viewModelScope.launch {
-            _uiState.value = currentState.copy(isSaving = true)
-            
-            try {
-                // Simulate network delay for better UX
-                delay(500)
+        
+        // If API key is from BuildConfig, we only need to save assistant ID (if not from BuildConfig)
+        if (currentState.isApiKeyFromBuildConfig) {
+            viewModelScope.launch {
+                _uiState.value = currentState.copy(isSaving = true)
                 
-                securePreferences.saveApiKey(currentState.apiKey)
-                
-                if (currentState.assistantId.isNotBlank()) {
-                    securePreferences.saveDefaultAssistantId(currentState.assistantId)
+                try {
+                    delay(300)
+                    
+                    if (!currentState.isAssistantIdFromBuildConfig && currentState.assistantId.isNotBlank()) {
+                        securePreferences.saveDefaultAssistantId(currentState.assistantId)
+                    }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        message = "Settings saved successfully!"
+                    )
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        message = "Failed to save settings: ${e.message}"
+                    )
                 }
+            }
+        } else {
+            // Legacy behavior for manual API key entry
+            if (currentState.apiKey.isBlank()) {
+                _uiState.value = currentState.copy(
+                    message = "API key cannot be empty"
+                )
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.value = currentState.copy(isSaving = true)
                 
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    message = "Settings saved successfully!"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    message = "Failed to save settings: ${e.message}"
-                )
+                try {
+                    delay(500)
+                    
+                    securePreferences.saveApiKey(currentState.apiKey)
+                    
+                    if (currentState.assistantId.isNotBlank()) {
+                        securePreferences.saveDefaultAssistantId(currentState.assistantId)
+                    }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        message = "Settings saved successfully!"
+                    )
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        message = "Failed to save settings: ${e.message}"
+                    )
+                }
             }
         }
     }
@@ -82,5 +122,7 @@ data class SettingsUiState(
     val apiKey: String = "",
     val assistantId: String = "",
     val isSaving: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val isApiKeyFromBuildConfig: Boolean = false,
+    val isAssistantIdFromBuildConfig: Boolean = false
 )

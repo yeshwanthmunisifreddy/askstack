@@ -52,8 +52,8 @@ fun ChatScreen(
         viewModel.initializeChat(conversationId, assistantId)
     }
 
-    // Auto-scroll to bottom when new messages arrive
-    LaunchedEffect(uiState.messages.size) {
+    // Auto-scroll to bottom when new messages arrive or content changes
+    LaunchedEffect(uiState.messages.size, uiState.messages.lastOrNull()?.content?.length) {
         if (uiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(uiState.messages.size - 1)
         }

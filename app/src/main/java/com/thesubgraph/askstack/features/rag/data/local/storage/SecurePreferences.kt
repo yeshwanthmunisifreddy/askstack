@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import com.thesubgraph.askstack.BuildConfig
 
 @Singleton
 class SecurePreferences @Inject constructor(
@@ -28,18 +29,20 @@ class SecurePreferences @Inject constructor(
         )
     }
     
+    fun getApiKey(): String {
+        return BuildConfig.OPENAI_API_KEY.ifBlank {
+            encryptedPrefs.getString(KEY_API_KEY, "") ?: ""
+        }
+    }
+    
+    fun hasApiKey(): Boolean {
+        return getApiKey().isNotBlank()
+    }
+    
     fun saveApiKey(apiKey: String) {
         encryptedPrefs.edit {
             putString(KEY_API_KEY, apiKey)
         }
-    }
-    
-    fun getApiKey(): String? {
-        return encryptedPrefs.getString(KEY_API_KEY, null)
-    }
-    
-    fun hasApiKey(): Boolean {
-        return !getApiKey().isNullOrBlank()
     }
     
     fun clearApiKey() {
@@ -55,7 +58,13 @@ class SecurePreferences @Inject constructor(
     }
     
     fun getDefaultAssistantId(): String? {
-        return encryptedPrefs.getString(KEY_DEFAULT_ASSISTANT_ID, null)
+        return BuildConfig.OPENAI_ASSISTANT_ID.ifBlank {
+            encryptedPrefs.getString(KEY_DEFAULT_ASSISTANT_ID, null)
+        }
+    }
+    
+    fun hasAssistantIdFromBuildConfig(): Boolean {
+        return BuildConfig.OPENAI_ASSISTANT_ID.isNotBlank()
     }
     
     companion object {

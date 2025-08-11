@@ -92,17 +92,19 @@ class ChatViewModel @Inject constructor(
 
     private fun loadMessages(conversationId: String) {
         viewModelScope.launch {
-            getMessagesUseCase(conversationId)
+            getMessagesUseCase(conversationId).flowOn(Dispatchers.IO)
                 .catch { error ->
                     _uiState.value = _uiState.value.copy(
                         error = error.message ?: "Failed to load messages"
                     )
                 }
                 .collect { messages ->
-                    _uiState.value = _uiState.value.copy(
+                    val currentState = _uiState.value
+                    val newState = currentState.copy(
                         messages = messages,
                         isLoading = false
                     )
+                    _uiState.value = newState
                 }
         }
     }
@@ -122,7 +124,7 @@ class ChatViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isSending = true, error = null)
 
         viewModelScope.launch {
-            sendMessageUseCase(conversation.id, content, assistantId)
+            sendMessageUseCase(conversation.id, content, assistantId).flowOn(Dispatchers.IO)
                 .catch { error ->
                     _uiState.value = _uiState.value.copy(
                         isSending = false,
@@ -138,10 +140,14 @@ class ChatViewModel @Inject constructor(
     private fun handleStreamEvent(event: StreamEvent) {
         when (event) {
             is StreamEvent.RunQueued -> {
-                // Message is queued for processing
             }
             is StreamEvent.RunInProgress -> {
-                // Assistant is processing
+            }
+            is StreamEvent.RunRequiresAction -> {
+                _uiState.value = _uiState.value.copy(
+                    isSending = false,
+                    error = "Assistant requires tool interaction (not implemented)"
+                )
             }
             is StreamEvent.RunCompleted -> {
                 _uiState.value = _uiState.value.copy(isSending = false)
@@ -153,10 +159,8 @@ class ChatViewModel @Inject constructor(
                 )
             }
             is StreamEvent.MessageCreated -> {
-                // Assistant message created
             }
             is StreamEvent.MessageDelta -> {
-                // Real-time content update handled by repository
             }
             is StreamEvent.MessageCompleted -> {
                 _uiState.value = _uiState.value.copy(isSending = false)

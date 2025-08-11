@@ -6,7 +6,7 @@ data class RunRequest(
     @SerializedName("assistant_id")
     val assistantId: String,
     @SerializedName("stream")
-    val stream: Boolean = false,
+    val stream: Boolean = true,
     @SerializedName("instructions")
     val instructions: String? = null,
     @SerializedName("additional_instructions")

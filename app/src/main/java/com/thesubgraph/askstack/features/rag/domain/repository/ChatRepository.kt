@@ -2,11 +2,24 @@ package com.thesubgraph.askstack.features.rag.domain.repository
 
 import com.thesubgraph.askstack.base.utils.network.ValueResult
 import com.thesubgraph.askstack.features.rag.data.remote.streaming.StreamEvent
+import com.thesubgraph.askstack.features.rag.domain.model.Assistant
+import com.thesubgraph.askstack.features.rag.domain.model.AssistantTool
 import com.thesubgraph.askstack.features.rag.domain.model.ChatMessage
 import com.thesubgraph.askstack.features.rag.domain.model.Conversation
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
+    
+    // Assistant management
+    suspend fun createAssistant(
+        name: String,
+        instructions: String,
+        model: String,
+        tools: List<AssistantTool>,
+        description: String? = null
+    ): Flow<ValueResult<Assistant>>
+    suspend fun listAssistants(): Flow<ValueResult<List<Assistant>>>
+    suspend fun getAssistant(assistantId: String): Flow<ValueResult<Assistant>>
     
     // Conversation management
     suspend fun createConversation(assistantId: String, title: String): Flow<ValueResult<Conversation>>

@@ -1,5 +1,11 @@
 package com.thesubgraph.askstack.features.rag.view.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,10 +18,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thesubgraph.askstack.features.rag.domain.model.ChatMessage
@@ -60,16 +72,26 @@ fun ChatBubble(
                 .padding(12.dp)
         ) {
             Column {
-                Text(
-                    text = message.content,
-                    color = if (message.role == MessageRole.USER) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
+                // Show content with typing cursor if streaming
+                if (message.role == MessageRole.ASSISTANT && message.isStreaming) {
+                    StreamingText(
+                        text = message.content,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                } else {
+                    Text(
+                        text = message.content,
+                        color = if (message.role == MessageRole.USER) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                }
                 
                 if (message.role == MessageRole.ASSISTANT && message.isStreaming) {
                     TypingIndicator(
@@ -99,6 +121,45 @@ fun ChatBubble(
             }
         }
     }
+}
+
+@Composable
+private fun StreamingText(
+    text: String,
+    color: androidx.compose.ui.graphics.Color,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    lineHeight: androidx.compose.ui.unit.TextUnit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "cursor_alpha"
+    )
+
+    val annotatedText = buildAnnotatedString {
+        append(text)
+        if (text.isNotEmpty()) {
+            withStyle(
+                style = SpanStyle(
+                    color = color.copy(alpha = cursorAlpha)
+                )
+            ) {
+                append("▋") // Typing cursor
+            }
+        }
+    }
+
+    Text(
+        text = annotatedText,
+        color = color,
+        fontSize = fontSize,
+        lineHeight = lineHeight
+    )
 }
 
 @OptIn(ExperimentalTime::class)

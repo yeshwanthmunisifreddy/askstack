@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +47,18 @@ internal fun TopBar(
                         Icon(
                             imageVector = Icons.Default.Chat,
                             contentDescription = "Chat Assistant",
+                            tint = Color.Black
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = {
+                            router.navigateTo(Destination.AssistantManagement)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SmartToy,
+                            contentDescription = "Manage Assistants",
                             tint = Color.Black
                         )
                     }

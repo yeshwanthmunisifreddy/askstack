@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.parcelize)
@@ -8,6 +11,11 @@ plugins {
     alias(libs.plugins.ksp)
 
 }
+
+// Load properties from local.properties
+val keystorePropertiesFile = rootProject.file("local.properties")
+val keystoreProperties = Properties()
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "com.thesubgraph.askstack"
@@ -21,6 +29,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Add OpenAI API key from local.properties as BuildConfig field
+        val openaiApiKey = keystoreProperties["OPENAI_API_KEY"] as String
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openaiApiKey\"")
+        
+        // Add OpenAI Assistant ID from local.properties as BuildConfig field
+        val assistantId = keystoreProperties["OPENAI_ASSISTANT_ID"] as String? ?: ""
+        buildConfigField("String", "OPENAI_ASSISTANT_ID", "\"$assistantId\"")
     }
 
     buildTypes {
@@ -41,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

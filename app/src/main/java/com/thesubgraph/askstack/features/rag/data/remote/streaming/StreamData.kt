@@ -9,7 +9,15 @@ data class StreamData(
     @SerializedName("object")
     val objectType: String,
     @SerializedName("data")
-    val data: StreamDataContent?
+    val data: StreamDataContent?,
+    @SerializedName("id")
+    val id: String?,
+    @SerializedName("status")
+    val status: String?,
+    @SerializedName("event")
+    val event: String?,
+    @SerializedName("delta")
+    val delta: StreamDelta?
 )
 
 data class StreamDataContent(

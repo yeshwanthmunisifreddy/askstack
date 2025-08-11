@@ -91,60 +91,117 @@ fun SettingsScreen(
                 fontWeight = FontWeight.Medium
             )
             
-            Text(
-                text = "Enter your OpenAI API key to start using the chat assistant. Your API key is stored securely on your device.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
+            if (uiState.isApiKeyFromBuildConfig || uiState.isAssistantIdFromBuildConfig) {
+                Text(
+                    text = buildString {
+                        if (uiState.isApiKeyFromBuildConfig && uiState.isAssistantIdFromBuildConfig) {
+                            append("OpenAI API key and Assistant ID are loaded from BuildConfig. ")
+                        } else if (uiState.isApiKeyFromBuildConfig) {
+                            append("OpenAI API key is loaded from BuildConfig. ")
+                        } else if (uiState.isAssistantIdFromBuildConfig) {
+                            append("Assistant ID is loaded from BuildConfig. ")
+                        }
+                        append("Configure these values in your local.properties file.")
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                OutlinedTextField(
+                    value = "✓ API Key loaded from BuildConfig",
+                    onValueChange = { },
+                    label = { Text("OpenAI API Key") },
+                    readOnly = true,
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Text(
+                    text = "Enter your OpenAI API key to start using the chat assistant. Your API key is stored securely on your device.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
 
-            OutlinedTextField(
-                value = uiState.apiKey,
-                onValueChange = viewModel::setApiKey,
-                label = { Text("OpenAI API Key") },
-                placeholder = { Text("sk-...") },
-                visualTransformation = if (showApiKey) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    IconButton(onClick = { showApiKey = !showApiKey }) {
-                        Icon(
-                            imageVector = if (showApiKey) {
-                                Icons.Default.VisibilityOff
-                            } else {
-                                Icons.Default.Visibility
-                            },
-                            contentDescription = if (showApiKey) {
-                                "Hide API key"
-                            } else {
-                                "Show API key"
-                            }
-                        )
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth()
-            )
+                OutlinedTextField(
+                    value = uiState.apiKey,
+                    onValueChange = viewModel::setApiKey,
+                    label = { Text("OpenAI API Key") },
+                    placeholder = { Text("sk-...") },
+                    visualTransformation = if (showApiKey) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { showApiKey = !showApiKey }) {
+                            Icon(
+                                imageVector = if (showApiKey) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = if (showApiKey) {
+                                    "Hide API key"
+                                } else {
+                                    "Show API key"
+                                }
+                            )
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-            OutlinedTextField(
-                value = uiState.assistantId,
-                onValueChange = viewModel::setAssistantId,
-                label = { Text("Assistant ID (Optional)") },
-                placeholder = { Text("asst_...") },
-                supportingText = {
-                    Text("Leave empty to use default assistant or specify your custom assistant ID")
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (uiState.isAssistantIdFromBuildConfig) {
+                OutlinedTextField(
+                    value = "✓ Assistant ID loaded from BuildConfig",
+                    onValueChange = { },
+                    label = { Text("Assistant ID") },
+                    readOnly = true,
+                    enabled = false,
+                    supportingText = {
+                        Text("Assistant ID is configured in local.properties")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                OutlinedTextField(
+                    value = uiState.assistantId,
+                    onValueChange = viewModel::setAssistantId,
+                    label = { Text("Assistant ID (Optional)") },
+                    placeholder = { Text("asst_...") },
+                    supportingText = {
+                        Text("Leave empty to use default assistant or specify your custom assistant ID")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Button(
                 onClick = viewModel::saveSettings,
-                enabled = uiState.apiKey.isNotBlank() && !uiState.isSaving,
+                enabled = when {
+                    uiState.isApiKeyFromBuildConfig && uiState.isAssistantIdFromBuildConfig -> {
+                        // Both from BuildConfig - no saving needed but show button for feedback
+                        !uiState.isSaving
+                    }
+                    uiState.isApiKeyFromBuildConfig -> {
+                        // Only API key from BuildConfig - can save assistant ID
+                        !uiState.isSaving
+                    }
+                    else -> {
+                        // Legacy mode - need valid API key
+                        uiState.apiKey.isNotBlank() && !uiState.isSaving
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (uiState.isSaving) "Saving..." else "Save Settings"
+                    text = when {
+                        uiState.isSaving -> "Saving..."
+                        uiState.isApiKeyFromBuildConfig && uiState.isAssistantIdFromBuildConfig -> "Settings Configured"
+                        else -> "Save Settings"
+                    }
                 )
             }
         }

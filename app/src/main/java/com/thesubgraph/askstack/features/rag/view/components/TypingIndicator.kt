@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -30,14 +31,32 @@ fun TypingIndicator(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(3) { index ->
+            val delay = index * 200
+            
             val alpha by infiniteTransition.animateFloat(
                 initialValue = 0.3f,
                 targetValue = 1f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(600),
+                    animation = tween(
+                        durationMillis = 600,
+                        delayMillis = delay
+                    ),
                     repeatMode = RepeatMode.Reverse
                 ),
                 label = "dot_$index"
+            )
+            
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 0.8f,
+                targetValue = 1.2f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 600,
+                        delayMillis = delay
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "scale_$index"
             )
             
             Box(
@@ -46,6 +65,10 @@ fun TypingIndicator(modifier: Modifier = Modifier) {
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.onSurfaceVariant)
                     .alpha(alpha)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
             )
         }
     }

@@ -14,7 +14,7 @@ data class RunResponse(
     @SerializedName("assistant_id")
     val assistantId: String,
     @SerializedName("status")
-    val status: String, // queued, in_progress, requires_action, cancelling, cancelled, failed, completed, expired
+    val status: String,
     @SerializedName("required_action")
     val requiredAction: RequiredActionDto?,
     @SerializedName("last_error")

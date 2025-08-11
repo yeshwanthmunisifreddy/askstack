@@ -1,6 +1,5 @@
 package com.thesubgraph.askstack.features.rag.data.remote.streaming
 
-import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -19,26 +18,36 @@ class OpenAIStreamHandler @Inject constructor(
             
             reader.useLines { lines ->
                 for (line in lines) {
-                    if (line.startsWith("data: ")) {
-                        val data = line.substring(6).trim()
-                        
-                        if (data == "[DONE]") {
-                            emit(StreamEvent.Done)
-                            break
+                    when {
+                        line.startsWith("data: ") -> {
+                            val data = line.substring(6).trim()
+                            
+                            if (data == "[DONE]") {
+                                emit(StreamEvent.Done)
+                                break
+                            }
+                            
+                            if (data.isNotEmpty()) {
+                                try {
+                                    val streamData = gson.fromJson(data, StreamData::class.java)
+                                    val event = parseStreamData(streamData)
+                                    event?.let { 
+                                        emit(it) 
+                                    }
+                                } catch (e: Exception) {
+                                }
+                            }
                         }
-                        
-                        try {
-                            val streamData = gson.fromJson(data, StreamData::class.java)
-                            val event = parseStreamData(streamData)
-                            event?.let { emit(it) }
-                        } catch (e: Exception) {
-                            Log.w("OpenAIStreamHandler", "Failed to parse stream data: $data", e)
+                        line.startsWith("event: ") -> {
+                        }
+                        line.isEmpty() -> {
+                        }
+                        else -> {
                         }
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("OpenAIStreamHandler", "Error handling stream", e)
             emit(StreamEvent.Error(e.message ?: "Unknown streaming error"))
         } finally {
             responseBody.close()
@@ -48,20 +57,36 @@ class OpenAIStreamHandler @Inject constructor(
     private fun parseStreamData(streamData: StreamData): StreamEvent? {
         return when (streamData.objectType) {
             "thread.run" -> {
-                when (streamData.data?.status) {
+                val status = streamData.data?.status ?: streamData.status
+                when (status) {
                     "queued" -> StreamEvent.RunQueued
                     "in_progress" -> StreamEvent.RunInProgress
+                    "requires_action" -> StreamEvent.RunRequiresAction
                     "completed" -> StreamEvent.RunCompleted
-                    "failed" -> StreamEvent.RunFailed(streamData.data.lastError?.message ?: "Run failed")
+                    "failed" -> StreamEvent.RunFailed(streamData.data?.lastError?.message ?: "Run failed")
+                    "cancelled" -> StreamEvent.RunFailed("Run was cancelled")
+                    "expired" -> StreamEvent.RunFailed("Run expired")
                     else -> null
                 }
             }
             "thread.message" -> {
-                StreamEvent.MessageCreated(streamData.data?.id ?: "")
+                val messageId = streamData.data?.id
+                if (messageId.isNullOrBlank()) {
+                    null
+                } else {
+                    StreamEvent.MessageCreated(messageId)
+                }
             }
             "thread.message.delta" -> {
-                val content = streamData.data?.delta?.content?.firstOrNull()?.text?.value
-                content?.let { StreamEvent.MessageDelta(it) }
+                val delta = streamData.delta ?: streamData.data?.delta
+                val deltaContent = delta?.content?.firstOrNull()
+                val textValue = deltaContent?.text?.value
+                
+                if (!textValue.isNullOrEmpty()) {
+                    StreamEvent.MessageDelta(textValue)
+                } else {
+                    null
+                }
             }
             "thread.message.completed" -> {
                 val message = streamData.data
@@ -78,7 +103,22 @@ class OpenAIStreamHandler @Inject constructor(
                 } ?: emptyList()
                 StreamEvent.MessageCompleted(content, citations)
             }
-            else -> null
+            "thread.run.step" -> {
+                val status = streamData.data?.status ?: streamData.status
+                when (status) {
+                    "in_progress" -> StreamEvent.RunInProgress
+                    "completed" -> StreamEvent.RunCompleted
+                    "failed" -> StreamEvent.RunFailed(streamData.data?.lastError?.message ?: "Step failed")
+                    else -> null
+                }
+            }
+            "thread.run.step.delta" -> {
+                val content = streamData.data?.delta?.content?.firstOrNull()?.text?.value
+                content?.let { StreamEvent.MessageDelta(it) }
+            }
+            else -> {
+                null
+            }
         }
     }
 }
@@ -86,6 +126,7 @@ class OpenAIStreamHandler @Inject constructor(
 sealed class StreamEvent {
     object RunQueued : StreamEvent()
     object RunInProgress : StreamEvent()
+    object RunRequiresAction : StreamEvent()
     object RunCompleted : StreamEvent()
     data class RunFailed(val error: String) : StreamEvent()
     data class MessageCreated(val messageId: String) : StreamEvent()
