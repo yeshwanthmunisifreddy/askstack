@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +48,7 @@ fun ChatInput(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
