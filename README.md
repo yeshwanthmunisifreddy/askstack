@@ -30,6 +30,10 @@ AskStack lets you search StackOverflow questions with a clean, reactive UI. It s
 - 🌐 Live connectivity banner with transient “Connected” message
 - ⏳ Loading, ❌ error, and ∅ empty-results states with retry
 
+## Android RAG Assistant (OpenAI)
+See the full guide here:
+- [Android RAG Assistant (OpenAI Assistants API + Jetpack Compose)](app/README.md)
+
 ## 🏗️ Architecture
 
 ```
@@ -69,7 +73,7 @@ app/src/main/java/com/thesubgraph/askstack/
 │  ├─ components/        # UI building blocks: banners, placeholders, etc.
 │  ├─ theme/             # Colors, typography, theme
 │  └─ utils/             # Date utils, modifiers, network core
-└─ features/stackoverflow/
+└─ features/search/
    ├─ data/              # Remote ApiService, repository impl, DTOs
    ├─ domain/            # Models, repository interface, use cases
    ├─ view/              # Compose screens & components

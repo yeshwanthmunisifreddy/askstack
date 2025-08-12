@@ -12,7 +12,6 @@ plugins {
 
 }
 
-// Load properties from local.properties
 val keystorePropertiesFile = rootProject.file("local.properties")
 val keystoreProperties = Properties()
 keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -30,13 +29,13 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // Add OpenAI API key from local.properties as BuildConfig field
         val openaiApiKey = keystoreProperties["OPENAI_API_KEY"] as String
         buildConfigField("String", "OPENAI_API_KEY", "\"$openaiApiKey\"")
-        
-        // Add OpenAI Assistant ID from local.properties as BuildConfig field
         val assistantId = keystoreProperties["OPENAI_ASSISTANT_ID"] as String? ?: ""
         buildConfigField("String", "OPENAI_ASSISTANT_ID", "\"$assistantId\"")
+        buildConfigField("boolean", "ENABLE_MOCK_STREAMING", "false")
+        buildConfigField("boolean", "ENABLE_SMOOTH_TYPING", "true")
+        buildConfigField("float", "TYPING_SPEED_MULTIPLIER", "4.0f")
     }
 
     buildTypes {
@@ -103,4 +102,5 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(libs.kotlinx.coroutines.test)}
+    testImplementation(libs.kotlinx.coroutines.test)
+}

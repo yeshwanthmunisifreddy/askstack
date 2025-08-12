@@ -1,5 +1,6 @@
 package com.thesubgraph.askstack.features.assistant.data.repository
 
+import com.thesubgraph.askstack.BuildConfig
 import com.thesubgraph.askstack.base.utils.network.RequestWrapper
 import com.thesubgraph.askstack.base.utils.network.ValueResult
 import com.thesubgraph.askstack.features.assistant.data.local.database.dao.ConversationDao
@@ -41,9 +42,9 @@ class ChatRepositoryImpl @Inject constructor(
     private val securePreferences: com.thesubgraph.askstack.features.assistant.data.local.storage.SecurePreferences
 ) : ChatRepository {
 
-    private val ENABLE_MOCK_STREAMING = false
-    private val ENABLE_SMOOTH_TYPING = true
-    private val TYPING_SPEED_MULTIPLIER = 4.0
+    private val ENABLE_MOCK_STREAMING = BuildConfig.ENABLE_MOCK_STREAMING
+    private val ENABLE_SMOOTH_TYPING = BuildConfig.ENABLE_SMOOTH_TYPING
+    private val TYPING_SPEED_MULTIPLIER = BuildConfig.TYPING_SPEED_MULTIPLIER.toDouble()
 
     private val activeStreamJobs = ConcurrentHashMap<String, Job>()
     private val activeResponseBodies = ConcurrentHashMap<String, okhttp3.ResponseBody>()
