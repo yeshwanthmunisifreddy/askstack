@@ -1,4 +1,8 @@
-# 📱 AskStack - Modern Android StackOverflow Search App
+# 📱 AskStack - Modern Android StackOverflow Search App + AI Assistant(Interact with StackOverflow using OpenAI Assistant )
+
+## Android RAG Assistant (OpenAI)
+See the full guide here:
+- [Android RAG Assistant (OpenAI Assistants API + Jetpack Compose)](app/README.md)
 
 <div align="center">
 
@@ -29,10 +33,6 @@ AskStack lets you search StackOverflow questions with a clean, reactive UI. It s
 - 🧾 Bottom sheet for detailed question content (HTML rendering)
 - 🌐 Live connectivity banner with transient “Connected” message
 - ⏳ Loading, ❌ error, and ∅ empty-results states with retry
-
-## Android RAG Assistant (OpenAI)
-See the full guide here:
-- [Android RAG Assistant (OpenAI Assistants API + Jetpack Compose)](app/README.md)
 
 ## 🏗️ Architecture
 
