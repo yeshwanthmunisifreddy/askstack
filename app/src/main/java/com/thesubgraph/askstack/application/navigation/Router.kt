@@ -13,8 +13,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.thesubgraph.askstack.base.theme.AskStackTheme
 import com.thesubgraph.askstack.base.utils.noRippleClickable
-import com.thesubgraph.askstack.features.stackoverflow.view.home.HomeScreen
-import com.thesubgraph.askstack.features.stackoverflow.viewmodel.HomeViewModel
+import com.thesubgraph.askstack.features.search.view.home.HomeScreen
+import com.thesubgraph.askstack.features.search.viewmodel.HomeViewModel
+import com.thesubgraph.askstack.features.assistant.view.ChatScreen
+import com.thesubgraph.askstack.features.assistant.viewmodel.ChatViewModel
 
 class Router(val navController: NavHostController) {
     @Composable
@@ -54,6 +56,22 @@ class Router(val navController: NavHostController) {
                     composable<Destination.Home> {
                         val viewModel: HomeViewModel = hiltViewModel()
                         HomeScreen(router = this@Router, viewModel = viewModel)
+                    }
+                    
+                    composable<Destination.ChatScreen> { backStackEntry ->
+                        val args = backStackEntry.arguments
+                        val conversationId = args?.getString("conversationId")
+                        val assistantId = args?.getString("assistantId")
+                        val initialMessage = args?.getString("initialMessage")
+                        
+                        val viewModel: ChatViewModel = hiltViewModel()
+                        ChatScreen(
+                            conversationId = conversationId,
+                            assistantId = assistantId,
+                            initialMessage = initialMessage,
+                            onBackPressed = { navigateUp() },
+                            viewModel = viewModel
+                        )
                     }
                 }
             }

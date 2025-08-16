@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.parcelize)
@@ -8,6 +11,10 @@ plugins {
     alias(libs.plugins.ksp)
 
 }
+
+val keystorePropertiesFile = rootProject.file("local.properties")
+val keystoreProperties = Properties()
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "com.thesubgraph.askstack"
@@ -21,6 +28,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        val openaiApiKey = keystoreProperties["OPENAI_API_KEY"] as String
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openaiApiKey\"")
+        val assistantId = keystoreProperties["OPENAI_ASSISTANT_ID"] as String? ?: ""
+        buildConfigField("String", "OPENAI_ASSISTANT_ID", "\"$assistantId\"")
+        buildConfigField("boolean", "ENABLE_MOCK_STREAMING", "false")
+        buildConfigField("boolean", "ENABLE_SMOOTH_TYPING", "true")
+        buildConfigField("float", "TYPING_SPEED_MULTIPLIER", "4.0f")
     }
 
     buildTypes {
@@ -41,6 +56,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -54,14 +70,14 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
 
 
     /**------------Hilt----------------------------- */
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
-    testImplementation(libs.junit.junit)
+    testImplementation(libs.junit)
     ksp(libs.hilt.android.compiler)
 
     /**------------Retrofit----------------------------- */
@@ -72,6 +88,9 @@ dependencies {
 
     implementation(libs.jetbrains.kotlinx.datetime)
 
+    /**------------Chat Assistant----------------------------- */
+    implementation(libs.bundles.chat.assistant)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -83,4 +102,5 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(libs.kotlinx.coroutines.test)}
+    testImplementation(libs.kotlinx.coroutines.test)
+}

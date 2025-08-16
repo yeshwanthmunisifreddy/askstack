@@ -3,7 +3,7 @@ package com.thesubgraph.askstack.application.di
 import android.content.Context
 import com.google.gson.Gson
 import com.thesubgraph.askstack.base.utils.network.RequestWrapper
-import com.thesubgraph.askstack.features.stackoverflow.data.remote.ApiService
+import com.thesubgraph.askstack.features.search.data.remote.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,7 +31,9 @@ object RetrofitModule {
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
+        return HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.HEADERS // Use HEADERS for streaming to avoid logging large response bodies
+        }
     }
 
     @Singleton
@@ -53,9 +55,10 @@ object RetrofitModule {
         loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient {
         val okHttpClient = OkHttpClient.Builder()
-            .callTimeout(30, TimeUnit.SECONDS)
-            .connectTimeout(0, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS) // Disable call timeout for streaming
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS) // Disable read timeout for streaming
+            .writeTimeout(30, TimeUnit.SECONDS)
             .hostnameVerifier { _, _ -> true }
             .addInterceptor(loggingInterceptor)
         return okHttpClient.build()

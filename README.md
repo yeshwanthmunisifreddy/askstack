@@ -1,4 +1,8 @@
-# 📱 AskStack - Modern Android StackOverflow Search App
+# 📱 AskStack - Modern Android StackOverflow Search App + AI Assistant(Interact with StackOverflow using OpenAI Assistant )
+
+## Android RAG Assistant (OpenAI)
+See the full guide here:
+- [Android RAG Assistant (OpenAI Assistants API + Jetpack Compose)](app/README.md)
 
 <div align="center">
 
@@ -69,7 +73,7 @@ app/src/main/java/com/thesubgraph/askstack/
 │  ├─ components/        # UI building blocks: banners, placeholders, etc.
 │  ├─ theme/             # Colors, typography, theme
 │  └─ utils/             # Date utils, modifiers, network core
-└─ features/stackoverflow/
+└─ features/search/
    ├─ data/              # Remote ApiService, repository impl, DTOs
    ├─ domain/            # Models, repository interface, use cases
    ├─ view/              # Compose screens & components
